@@ -1,3 +1,9 @@
+# MIT License
+# Copyright (c) 2024 Oliver Ribeiro Calazans Jeronimo
+# Repository: https://github.com/olivercalazans/BlueTracker
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software...
+
+
 import asyncio, sys
 from functools import lru_cache
 from bleak import BleakScanner
