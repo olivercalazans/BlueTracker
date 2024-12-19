@@ -12,13 +12,18 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 
-void handle_advertising_data(uint8_t *data, int length) {
-    printf("Raw advertising data: ");
-    for (int i = 0; i < length; i++) {
-        printf("%02x ", data[i]);
-    }
-    printf("\n");
-}
+
+// Prototype declaration -------------------------------------------------------------------------------------
+void handle_advertising_data();
+
+
+// Colors ----------------------------------------------------------------------------------------------------
+const char *RESET  = "\033[0m";
+const char *GREEN  = "\033[32m";
+const char *RED    = "\033[31m";
+const char *YELLOW = "\033[33m";
+
+
 
 int main() {
     int dev_id, sock, len;
@@ -107,4 +112,13 @@ int main() {
 
     close(sock);
     return 0;
+}
+
+
+void handle_advertising_data(uint8_t *data, int length) {
+    printf("Raw advertising data: ");
+    for (int i = 0; i < length; i++) {
+        printf("%02x ", data[i]);
+    }
+    printf("\n");
 }
