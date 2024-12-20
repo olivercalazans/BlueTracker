@@ -14,15 +14,15 @@
 
 
 // Prototype declaration -------------------------------------------------------------------------------------
-void verify_if_the_bluetooth_can_be_used();
-void set_scan_parameters();
-void start_scan();
-void fetch_hci_filter();
-void clear_filter();
-void set_event_filter();
-void set_packet_type_filter();
-void apply_filter();
-void handle_advertising_data();
+void verify_if_the_bluetooth_can_be_used(int *dev_id, int *sock);
+void set_scan_parameters(int *sock);
+void start_scan(int *sock);
+void fetch_hci_filter(int *sock, struct hci_filter *original_filter);
+void clear_filter(struct hci_filter *filter);
+void set_event_filter(struct hci_filter *filter);
+void set_packet_type_filter(struct hci_filter *filter);
+void apply_filter(int *sock, struct hci_filter *filter);
+void handle_advertising_data(uint8_t *data, int length);
 
 
 // Colors ----------------------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ void set_scan_parameters(int *sock) {
 
 
 
-void start_scan(int *sock){
+void start_scan(int *sock) {
     le_set_scan_enable_cp scan_enable_cp = { 0x01, 0x00 };
 
     struct hci_request enable_req;
