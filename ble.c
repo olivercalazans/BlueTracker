@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
@@ -23,13 +24,8 @@ void set_event_filter(struct hci_filter *filter);
 void set_packet_type_filter(struct hci_filter *filter);
 void apply_filter(int *sock, struct hci_filter *filter);
 void handle_advertising_data(uint8_t *data, int length);
-
-
-// Colors ----------------------------------------------------------------------------------------------------
-const char *RESET  = "\033[0m";
-const char *GREEN  = "\033[32m";
-const char *RED    = "\033[31m";
-const char *YELLOW = "\033[33m";
+char* get_distances(int8_t *rssi);
+double calculate_distance(int8_t *rssi, int *path_loss_exponent);
 
 
 
@@ -68,7 +64,10 @@ int main() {
         char addr[18];
         ba2str(&info->bdaddr, addr);
 
-        printf("Device: %s, RSSI: %d\n", addr, (int8_t)info->data[info->length]);
+        int8_t rssi    = (int8_t)info->data[info->length];
+        char *distance = get_distances(&rssi);
+
+        printf("Device: %s, Estimated Distance: %s meters\n", addr, distance);
 
         handle_advertising_data(info->data, info->length);
     }
@@ -160,6 +159,37 @@ void apply_filter(int *sock, struct hci_filter *filter) {
         close(*sock);
         exit(1);
     }
+}
+
+
+
+char* get_distances(int8_t *rssi) {
+    static char result[40];
+    result[0] = '\0';
+
+    for (int i = 2; i <= 4; i += 2) {
+        double distance = calculate_distance(rssi, &i);
+
+        if (distance > 10) {
+            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[31m%.2f\033[0m", distance); // Red
+        } else if (distance >= 5) {
+            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[33m%.2f\033[0m", distance); // Yellow
+        } else {
+            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[32m%.2f\033[0m", distance); // Green
+        }
+
+        if (i == 2) {
+            strcat(result, " ~ ");
+        }
+    }
+
+    return result;
+}
+
+
+
+double calculate_distance(int8_t *rssi, int *path_loss_exponent) {
+    return pow(10.0, (-50 - *rssi) / (10.0 * *path_loss_exponent));
 }
 
 
