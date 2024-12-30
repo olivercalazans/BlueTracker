@@ -4,6 +4,7 @@
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software...
 
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+
 
 
 // Prototype declaration -------------------------------------------------------------------------------------
@@ -23,9 +25,10 @@ void clear_filter(struct hci_filter *filter);
 void set_event_filter(struct hci_filter *filter);
 void set_packet_type_filter(struct hci_filter *filter);
 void apply_filter(int *sock, struct hci_filter *filter);
-void handle_advertising_data(uint8_t *data, int length);
 char* get_distances(int8_t *rssi);
-double calculate_distance(int8_t *rssi, int *path_loss_exponent);
+double calculate_distance(int8_t *rssi);
+void verify_if_there_is_data(int *len);
+// -----------------------------------------------------------------------------------------------------------
 
 
 
@@ -51,10 +54,7 @@ int main() {
 
     while (1) {
         len = read(sock, buffer, sizeof(buffer));
-        if (len < 0) {
-            perror("Error reading HCI events");
-            break;
-        }
+        verify_if_there_is_data(&len);
 
         evt_le_meta_event *meta_event = (evt_le_meta_event *)(buffer + (1 + HCI_EVENT_HDR_SIZE));
         if (meta_event->subevent != EVT_LE_ADVERTISING_REPORT)
@@ -68,8 +68,6 @@ int main() {
         char *distance = get_distances(&rssi);
 
         printf("Device: %s, Estimated Distance: %s meters\n", addr, distance);
-
-        handle_advertising_data(info->data, info->length);
     }
 
     setsockopt(sock, SOL_HCI, HCI_FILTER, &original_filter, sizeof(original_filter));
@@ -164,40 +162,30 @@ void apply_filter(int *sock, struct hci_filter *filter) {
 
 
 char* get_distances(int8_t *rssi) {
-    static char result[40];
-    result[0] = '\0';
+    static char result[25];
+    double distance = calculate_distance(rssi);
 
-    for (int i = 2; i <= 4; i += 2) {
-        double distance = calculate_distance(rssi, &i);
-
-        if (distance > 10) {
-            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[31m%.2f\033[0m", distance); // Red
-        } else if (distance >= 5) {
-            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[33m%.2f\033[0m", distance); // Yellow
-        } else {
-            snprintf(result + strlen(result), sizeof(result) - strlen(result), "\033[32m%.2f\033[0m", distance); // Green
-        }
-
-        if (i == 2) {
-            strcat(result, " ~ ");
-        }
+    if (distance > 10) {
+        snprintf(result, sizeof(result), "\033[31m%.2f\033[0m", distance); // Red
+    } else if (distance >= 5) {
+        snprintf(result, sizeof(result), "\033[33m%.2f\033[0m", distance); // Yellow
+    } else {
+        snprintf(result, sizeof(result), "\033[32m%.2f\033[0m", distance); // Green
     }
-
     return result;
 }
 
 
 
-double calculate_distance(int8_t *rssi, int *path_loss_exponent) {
-    return pow(10.0, (-50 - *rssi) / (10.0 * *path_loss_exponent));
+double calculate_distance(int8_t *rssi) {
+    return pow(10.0, (-50 - *rssi) / (10.0 * 3));
 }
 
 
 
-void handle_advertising_data(uint8_t *data, int length) {
-    printf("Raw advertising data: ");
-    for (int i = 0; i < length; i++) {
-        printf("%02x ", data[i]);
-    }
-    printf("\n");
+void verify_if_there_is_data(int *len) {
+    if (*len < 0) {
+        perror("Error reading HCI events");
+        exit(1);
+    }   
 }
