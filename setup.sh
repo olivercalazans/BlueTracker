@@ -3,12 +3,6 @@
 FILE="bluetracker"
 DIR="$HOME/.bluetracker"
 
-# Check if the script is being executed as root
-if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root."
-    exit 1
-fi
-
 # Find the path of the ble.c file
 PATH_C=$(find "$HOME" -name ble.c -exec dirname {} \; 2>/dev/null)
 
