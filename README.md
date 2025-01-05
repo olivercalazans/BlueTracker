@@ -5,7 +5,7 @@ it supports continuous scanning and distance updates for enhanced accuracy and r
 <br>
 
 ## Documentation
-For detailed documentation on installation, usage, and more about DataSeeker, visit our [Wiki](https://github.com/olivercalazans/BlueTracker/wiki).
+For detailed documentation on installation, usage, and more about BlueTracker, visit our [Wiki](https://github.com/olivercalazans/BlueTracker/wiki).
   
 <br>
 
