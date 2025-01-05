@@ -4,6 +4,13 @@ it supports continuous scanning and distance updates for enhanced accuracy and r
 
 <br>
 
+## Tech Stack
+![C](https://img.shields.io/badge/C-gray?style=for-the-badge)
+![Bluetooth](https://img.shields.io/badge/Bluetooth-blue?style=for-the-badge)
+![Linux](https://img.shields.io/badge/Linux-black?style=for-the-badge)
+
+<br>
+
 ## Documentation
 For detailed documentation on installation, usage, and more about BlueTracker, visit our [Wiki](https://github.com/olivercalazans/BlueTracker/wiki).
   
