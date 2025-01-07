@@ -1,13 +1,12 @@
-# BlueTracker
-A C script that uses Bluetooth signals to detect and measure the distance to nearby devices. Ideal for tracking and proximity-based applications,
-it supports continuous scanning and distance updates for enhanced accuracy and real-time monitoring.
+<p align="center">
+  <img src="assets/blue_logo.png" alt="Logo do Projeto" width="800">
+</p>
 
 <br>
 
-## Tech Stack
-![C](https://img.shields.io/badge/C-gray?style=for-the-badge)
-![Bluetooth](https://img.shields.io/badge/Bluetooth-blue?style=for-the-badge)
-![Linux](https://img.shields.io/badge/Linux-black?style=for-the-badge)
+# BlueTracker
+A C script that uses Bluetooth signals to detect and measure the distance to nearby devices. Ideal for tracking and proximity-based applications,
+it supports continuous scanning and distance updates for enhanced accuracy and real-time monitoring.
 
 <br>
 
@@ -17,8 +16,7 @@ For detailed documentation on installation, usage, and more about BlueTracker, v
 <br>
 
 ## Installation
-Simply run the **setup.sh** script, and everything will be set up for you.
-For detailed information, please refer to the [Wiki](https://github.com/olivercalazans/BlueTracker/wiki/Installation).
+To simplify the setup process, a bash script has been provided to automatically install and configure everything. Simply run the [setup.sh](setup.sh) script for an automatic installation. If you prefer to set everything up manually, you can follow the instructions detailed in the [Wiki](https://github.com/olivercalazans/BlueTracker/wiki/Installation).
 
 <br>
 
