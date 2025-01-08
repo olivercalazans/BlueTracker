@@ -1,10 +1,3 @@
-// MIT License
-// Copyright (c) 2024 Oliver Ribeiro Calazans Jeronimo
-// Repository: https://github.com/olivercalazans/BlueTracker
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software...
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,10 +6,21 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+#include <time.h>
 
 
+#define MAX_DEVICES 100
+#define SCAN_INTERVAL 1
 
-// Prototype declaration -------------------------------------------------------------------------------------
+
+typedef struct {
+    char addr[18];           // Device address
+    int8_t rssi;             // Device RSSI
+    char distance[25];       // Estimated distance
+    double numeric_distance; // Numeric distance for ordering
+} Device;
+
+
 void verify_if_the_bluetooth_can_be_used(int *dev_id, int *sock);
 void set_scan_parameters(int *sock);
 void start_scan(int *sock);
@@ -25,10 +29,13 @@ void clear_filter(struct hci_filter *filter);
 void set_event_filter(struct hci_filter *filter);
 void set_packet_type_filter(struct hci_filter *filter);
 void apply_filter(int *sock, struct hci_filter *filter);
-char* get_distances(int8_t *rssi);
+char* get_distances(int8_t *rssi, double *numeric_distance);
 double calculate_distance(int8_t *rssi);
 void verify_if_there_is_data(int *len);
-// -----------------------------------------------------------------------------------------------------------
+void add_device(Device devices[], int *device_count, const char *addr, int8_t rssi);
+int compare_devices(const void *a, const void *b);
+int verify_if_a_device_exists(Device devices[], int device_count, const char *addr);
+void clear_screen_and_print_devices(Device devices[], int *device_count);
 
 
 
@@ -36,7 +43,9 @@ int main() {
     int dev_id, sock, len;
     uint8_t buffer[HCI_MAX_EVENT_SIZE];
     struct hci_filter original_filter, new_filter;
-
+    Device devices[MAX_DEVICES];
+    int device_count = 0;
+    
     dev_id = hci_get_route(NULL);
     sock   = hci_open_dev(dev_id);
     
@@ -48,30 +57,46 @@ int main() {
     set_event_filter(&new_filter);
     set_packet_type_filter(&new_filter);
     apply_filter(&sock, &new_filter);
-
-
+    
     printf("Scanning BLE devices continuously...\n");
 
     while (1) {
-        len = read(sock, buffer, sizeof(buffer));
-        verify_if_there_is_data(&len);
+        time_t start_time = time(NULL);
+        device_count = 0;
+        
+        while (difftime(time(NULL), start_time) < SCAN_INTERVAL) {
+            len = read(sock, buffer, sizeof(buffer));
+            verify_if_there_is_data(&len);
+            
+            evt_le_meta_event *meta_event = (evt_le_meta_event *)(buffer + (1 + HCI_EVENT_HDR_SIZE));
+            if (meta_event->subevent != EVT_LE_ADVERTISING_REPORT)
+                continue;
 
-        evt_le_meta_event *meta_event = (evt_le_meta_event *)(buffer + (1 + HCI_EVENT_HDR_SIZE));
-        if (meta_event->subevent != EVT_LE_ADVERTISING_REPORT)
-            continue;
+            le_advertising_info *info = (le_advertising_info *)(meta_event->data + 1);
+            char addr[18];
+            ba2str(&info->bdaddr, addr);
 
-        le_advertising_info *info = (le_advertising_info *)(meta_event->data + 1);
-        char addr[18];
-        ba2str(&info->bdaddr, addr);
+            int8_t rssi = (int8_t)info->data[info->length];
+            double numeric_distance;
+            char *distance = get_distances(&rssi, &numeric_distance);
 
-        int8_t rssi    = (int8_t)info->data[info->length];
-        char *distance = get_distances(&rssi);
+            // Adds the device to the list if it is not already in the list
+            if (!verify_if_a_device_exists(devices, device_count, addr)) {
+                add_device(devices, &device_count, addr, rssi);
+            }
+        }
 
-        printf("Device: %s, Estimated Distance: %s meters\n", addr, distance);
+        // Sort devices in descending order of distance
+        qsort(devices, device_count, sizeof(Device), compare_devices);
+        
+        // Clears the screen and prints devices captured during the interval
+        clear_screen_and_print_devices(devices, &device_count);
+        
+        // Wait 0.5 seconds before starting the next cycle
+        usleep(500000);
     }
 
     setsockopt(sock, SOL_HCI, HCI_FILTER, &original_filter, sizeof(original_filter));
-
     close(sock);
     return 0;
 }
@@ -79,7 +104,7 @@ int main() {
 
 
 void verify_if_the_bluetooth_can_be_used(int *dev_id, int *sock) {
-    if (*dev_id < 0 || *sock < 0){
+    if (*dev_id < 0 || *sock < 0) {
         perror("Failed to open Bluetooth device");
         exit(1);
     }
@@ -161,16 +186,16 @@ void apply_filter(int *sock, struct hci_filter *filter) {
 
 
 
-char* get_distances(int8_t *rssi) {
+char* get_distances(int8_t *rssi, double *numeric_distance) {
     static char result[25];
-    double distance = calculate_distance(rssi);
+    *numeric_distance = calculate_distance(rssi);
 
-    if (distance > 10) {
-        snprintf(result, sizeof(result), "\033[31m%.2f\033[0m", distance); // Red
-    } else if (distance >= 5) {
-        snprintf(result, sizeof(result), "\033[33m%.2f\033[0m", distance); // Yellow
+    if (*numeric_distance > 10) {
+        snprintf(result, sizeof(result), "\033[31m%.2f\033[0m", *numeric_distance); // Red
+    } else if (*numeric_distance >= 5) {
+        snprintf(result, sizeof(result), "\033[33m%.2f\033[0m", *numeric_distance); // Yellow
     } else {
-        snprintf(result, sizeof(result), "\033[32m%.2f\033[0m", distance); // Green
+        snprintf(result, sizeof(result), "\033[32m%.2f\033[0m", *numeric_distance); // Green
     }
     return result;
 }
@@ -187,5 +212,57 @@ void verify_if_there_is_data(int *len) {
     if (*len < 0) {
         perror("Error reading HCI events");
         exit(1);
-    }   
+    }
+}
+
+
+
+void add_device(Device devices[], int *device_count, const char *addr, int8_t rssi) {
+    if (*device_count >= MAX_DEVICES) {
+        printf("Device list is full.\n");
+        return;
+    }
+
+    strcpy(devices[*device_count].addr, addr);
+    devices[*device_count].rssi = rssi;
+    devices[*device_count].numeric_distance = calculate_distance(&rssi);
+    strcpy(devices[*device_count].distance, get_distances(&rssi, &devices[*device_count].numeric_distance));
+    (*device_count)++;
+}
+
+
+
+int verify_if_a_device_exists(Device devices[], int device_count, const char *addr) {
+    for (int i = 0; i < device_count; i++) {
+        if (strcmp(devices[i].addr, addr) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
+
+int compare_devices(const void *a, const void *b) {
+    Device *deviceA = (Device *)a;
+    Device *deviceB = (Device *)b;
+
+    if (deviceA->numeric_distance < deviceB->numeric_distance) return 1;
+    if (deviceA->numeric_distance > deviceB->numeric_distance) return -1;
+    return 0;
+}
+
+
+
+void clear_screen_and_print_devices(Device devices[], int *device_count) {
+    system("clear");
+
+    printf("Detected Devices:\n");
+    printf("-----------------\n");
+
+    for (int i = 0; i < *device_count; i++) {
+        printf("Device: %s, Estimated Distance: %s meters\n", devices[i].addr, devices[i].distance);
+    }
+
+    *device_count = 0;
 }
