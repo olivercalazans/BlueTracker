@@ -5,8 +5,7 @@
 <br>
 
 # BlueTracker
-A C script that uses Bluetooth signals to detect and measure the distance to nearby devices. Ideal for tracking and proximity-based applications,
-it supports continuous scanning and distance updates for enhanced accuracy and real-time monitoring.
+A C script for Bluetooth Low Energy (BLE) device proximity detection and distance measurement. Designed for tracking and proximity-aware applications, it features continuous scanning and real-time distance updates, ensuring enhanced accuracy and reliable monitoring in dynamic environments.
 
 <br>
 
