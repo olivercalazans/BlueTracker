@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="assets/blue_logo.png" alt="Logo do Projeto" width="800">
-</p>
-
-<br>
-
 # BlueTracker
 A C script for Bluetooth Low Energy (BLE) device proximity detection and distance measurement. Designed for tracking and proximity-aware applications, it features continuous scanning and real-time distance updates, ensuring enhanced accuracy and reliable monitoring in dynamic environments.
 
