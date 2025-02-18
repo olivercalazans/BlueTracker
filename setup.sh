@@ -73,5 +73,5 @@ else
     printf "\n${WARNING} The LICENSE file was not found.\n"
 fi
 
-
+# Final message
 echo -e "\n\033[0;32mINSTALLATION COMPLETED\033[0m"
