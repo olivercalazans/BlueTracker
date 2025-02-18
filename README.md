@@ -11,7 +11,7 @@ For detailed documentation on installation, usage, and more about BlueTracker, v
 ## Dependencies
 This code requires ``build-essential`` for compiling the code and ``libbluetooth-dev`` for enabling Bluetooth functionality on Linux systems.
 > [!WARNING]
-> This code was designed to run on Linux systems only. It is not compatible with Windows, and no tests have been conducted on WSL.
+> This code was designed to run on Linux systems only. It is not compatible with Windows.
 
 <br>
 
